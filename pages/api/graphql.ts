@@ -2,6 +2,10 @@ import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-co
 import { ApolloServer, gql } from 'apollo-server-micro';
 import { IResolvers } from '@graphql-tools/utils';
 import { NextApiHandler } from 'next';
+import mysql from 'serverless-mysql';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
 
 const typeDefs = gql`
 	enum TaskStatus {
@@ -37,9 +41,16 @@ const typeDefs = gql`
 	}
 `;
 
-const resolvers: IResolvers = {
+interface ApolloContext {
+	db: mysql.ServerlessMysql;
+}
+
+const resolvers: IResolvers<any, ApolloContext> = {
 	Query: {
-		tasks(parent, args, context) {
+		async tasks(parent, args, context) {
+			const result = await context.db.query('SELECT "HELLO SERVERLESS" as hello_serverless');
+			await db.end();
+			console.info({ result });
 			return [];
 		},
 
@@ -63,15 +74,21 @@ const resolvers: IResolvers = {
 	},
 };
 
+const db = mysql({
+	config: {
+		host: process.env.MYSQL_HOST,
+		port: 3406,
+		user: process.env.MYSQL_USER,
+		password: process.env.MYSQL_PASSWORD,
+		database: process.env.MYSQL_DATABASE,
+	},
+});
+
 const server = new ApolloServer({
 	typeDefs,
 	resolvers,
-
-	plugins: [
-		...(process.env.NODE_ENV === 'development'
-			? [ApolloServerPluginLandingPageGraphQLPlayground]
-			: []),
-	],
+	context: { db },
+	plugins: [...(process.env.NODE_ENV === 'development' ? [ApolloServerPluginLandingPageGraphQLPlayground] : [])],
 });
 
 const serverStart = server.start();
