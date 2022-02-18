@@ -48,27 +48,27 @@ interface ApolloContext {
 const resolvers: IResolvers<any, ApolloContext> = {
 	Query: {
 		async tasks(parent, args, context) {
-			const result = await context.db.query('SELECT "HELLO SERVERLESS" as hello_serverless');
+			const result = await context.db.query('SELECT "hello world" AS hello_world');
 			await db.end();
-			console.info({ result });
+			console.log(result);
 			return [];
 		},
 
-		task(parent, args, context) {
+		async task(parent, args, context) {
 			return null;
 		},
 	},
 
 	Mutation: {
-		createTask(parent, args, context) {
+		async createTask(parent, args, context) {
 			return null;
 		},
 
-		updateTask(parent, args, context) {
+		async updateTask(parent, args, context) {
 			return null;
 		},
 
-		deleteTask(parent, args, context) {
+		async deleteTask(parent, args, context) {
 			return null;
 		},
 	},
@@ -77,7 +77,7 @@ const resolvers: IResolvers<any, ApolloContext> = {
 const db = mysql({
 	config: {
 		host: process.env.MYSQL_HOST,
-		port: 3406,
+		port: 3306,
 		user: process.env.MYSQL_USER,
 		password: process.env.MYSQL_PASSWORD,
 		database: process.env.MYSQL_DATABASE,
@@ -88,7 +88,11 @@ const server = new ApolloServer({
 	typeDefs,
 	resolvers,
 	context: { db },
-	plugins: [...(process.env.NODE_ENV === 'development' ? [ApolloServerPluginLandingPageGraphQLPlayground] : [])],
+	plugins: [
+		...(process.env.NODE_ENV === 'development'
+			? [ApolloServerPluginLandingPageGraphQLPlayground]
+			: []),
+	],
 });
 
 const serverStart = server.start();
