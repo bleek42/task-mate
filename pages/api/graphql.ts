@@ -3,6 +3,7 @@ import { ApolloServer, gql } from 'apollo-server-micro';
 import { IResolvers } from '@graphql-tools/utils';
 import { NextApiHandler } from 'next';
 import mysql from 'serverless-mysql';
+import { OkPacket } from 'mysql';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -84,8 +85,16 @@ const resolvers: IResolvers<any, ApolloContext> = {
 	},
 
 	Mutation: {
-		async createTask(parent, args, context) {
-			return null;
+		async createTask(parent, args: { input: { title: string } }, context): Promise<Task> {
+			const result = await context.db.query<OkPacket>(
+				'INSERT INTO tasks (title, status) VALUES(?, ?)',
+				[args.input.title, TaskStatus.active],
+			);
+			return {
+				id: result.insertId,
+				title: args.input.title,
+				status: TaskStatus.active,
+			};
 		},
 
 		async updateTask(parent, args, context) {
