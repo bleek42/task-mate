@@ -45,13 +45,37 @@ interface ApolloContext {
 	db: mysql.ServerlessMysql;
 }
 
+interface Task {
+	id: number;
+	title: string;
+	status: TaskStatus;
+}
+
+enum TaskStatus {
+	active = 'active',
+	completed = 'completed',
+}
+interface TaskDbRow {
+	id: number;
+	title: string;
+	status: TaskStatus;
+}
+
+type TaskDbQuery = TaskDbRow[];
+
 const resolvers: IResolvers<any, ApolloContext> = {
 	Query: {
-		async tasks(parent, args, context) {
-			const result = await context.db.query('SELECT "hello world" AS hello_world');
+		async tasks(parent, args: { status?: TaskStatus }, context): Promise<Task[]> {
+			const { status } = args;
+			const queryParams: string[] = [];
+			let query = 'SELECT id, title, status FROM tasks';
+			if (status) {
+				query += 'WHERE status = ?';
+				queryParams.push(status);
+			}
+			const tasks = await context.db.query<TaskDbQuery>(query, [status]);
 			await db.end();
-			console.log(result);
-			return [];
+			return tasks.map(({ id, title, status }) => ({ id, title, status }));
 		},
 
 		async task(parent, args, context) {
@@ -80,7 +104,7 @@ const db = mysql({
 		port: 3306,
 		user: process.env.MYSQL_USER,
 		password: process.env.MYSQL_PASSWORD,
-		database: process.env.MYSQL_DATABASE,
+		database: process.env.MYSQL_DATABASE || 'task_mate',
 	},
 });
 
