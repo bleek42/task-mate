@@ -1,7 +1,7 @@
-import { OkPacket } from "mysql";
-import { UserInputError } from "apollo-server-micro";
-import { TaskStatus, Task, Resolvers } from "../generated/graphql-backend";
-import { ServerlessMysql } from "serverless-mysql";
+import { OkPacket } from 'mysql';
+import { UserInputError } from 'apollo-server-micro';
+import { TaskStatus, Task, Resolvers } from '../generated/graphql-backend';
+import { ServerlessMysql } from 'serverless-mysql';
 
 interface ApolloContext {
   db: ServerlessMysql;
@@ -16,7 +16,7 @@ type TasksDbQuery = TaskDbRow[];
 
 const getTaskById = async (id: number, db: ServerlessMysql) => {
   const tasks = await db.query<TasksDbQuery>(
-    "SELECT id, title, status FROM tasks WHERE id = ?",
+    'SELECT id, title, status FROM tasks WHERE id = ?',
     [[id]]
   );
 
@@ -28,17 +28,17 @@ export const resolvers: Resolvers<ApolloContext> = {
   Query: {
     async tasks(parent, args, context) {
       const { status } = args;
+      let query = 'SELECT id, title, status FROM tasks';
       const params: string[] = [];
-      let query = "SELECT id, title, status FROM tasks";
 
       if (status) {
-        query += "WHERE status = ?";
+        query += ' WHERE status = ?';
         params.push(status);
       }
 
-      const tasks = await context.db.query<TasksDbQuery>(query, [status]);
+      const tasks = await context.db.query<TasksDbQuery>(query, params);
       await context.db.end();
-      return tasks.map(({ id, title, status }) => ({ id, title, status }));
+      return tasks;
     },
 
     async task(parent, args, context) {
@@ -53,7 +53,7 @@ export const resolvers: Resolvers<ApolloContext> = {
       context
     ): Promise<Task> {
       const result = await context.db.query<OkPacket>(
-        "INSERT INTO tasks (title, status) VALUES(?, ?)",
+        'INSERT INTO tasks (title, status) VALUES(?, ?)',
         [args.input.title, TaskStatus.Active]
       );
 
@@ -65,40 +65,34 @@ export const resolvers: Resolvers<ApolloContext> = {
     },
 
     async updateTask(parent, args, context) {
-      const { id, title, status } = args.input;
+      // const { id, title, status } = args.input;
       const query: string[] = [];
       const params: any[] = [];
 
-      if (title) {
-        query.push("title = ?");
-        params.push(title);
+      if (args.input.title) {
+        query.push('title = ?');
+        params.push(args.input.title);
       }
-      if (status) {
-        query.push("status = ?");
-        params.push(status);
-      }
-      if (!id) {
-        throw new UserInputError(`Task id:${id} not found...`);
-      }
-      if (!title || !status) {
-        throw new UserInputError("No task updates provided...");
+      if (args.input.status) {
+        query.push('status = ?');
+        params.push(args.input.status);
       }
 
-      params.push(id);
+      params.push(args.input.id);
       await context.db.query(
-        `UPDATE tasks SET ${query.join(",")} WHERE id = ?`,
+        `UPDATE tasks SET ${query.join(',')} WHERE id = ?`,
         params
       );
 
-      return await getTaskById(id, context.db);
+      return await getTaskById(args.input.id, context.db);
     },
 
     async deleteTask(parent, args, context) {
       const task = await getTaskById(args.id, context.db);
 
-      if (!task) throw new UserInputError("Task not found...");
+      if (!task) throw new UserInputError('Task not found...');
 
-      await context.db.query("DELETE FROM tasks WHERE id = ?", [args.id]);
+      await context.db.query('DELETE FROM tasks WHERE id = ?', [args.id]);
       return task;
     },
   },

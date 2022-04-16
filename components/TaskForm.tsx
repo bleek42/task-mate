@@ -16,6 +16,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ onSuccess }) => {
   const handleChange = (ev: React.ChangeEvent<HTMLInputElement>): void => {
     setTitle(ev.target.value);
   };
+
   const handleSubmit = async (
     ev: React.FormEvent<HTMLFormElement>
   ): Promise<void> => {
@@ -31,14 +32,14 @@ const TaskForm: React.FC<TaskFormProps> = ({ onSuccess }) => {
 
   return (
     <form onSubmit={handleSubmit}>
-      {error && <p className="alert-error">Error adding new task!</p>}
+      {error && <p className="alert-error">ERROR: {error.message}</p>}
       <input
         className="text-input new-task-text-input"
         type="text"
         name="title"
         value={title}
         onChange={handleChange}
-        placeholder="What task is next?"
+        placeholder="Type a title and press enter to add a new task..."
         autoComplete="off"
       />
     </form>

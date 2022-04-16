@@ -1,5 +1,5 @@
 import React from 'react';
-import { GetServerSideProps } from 'next';
+import { GetServerSideProps, NextPage } from 'next';
 import { useRouter } from 'next/router';
 import Error from 'next/error';
 
@@ -11,8 +11,9 @@ import {
   useTaskQuery,
 } from '../../generated/graphql-frontend';
 import UpdateTaskForm from '../../components/UpdateTaskForm';
+import Custom404 from '../404';
 
-const UpdateTask: React.FC = () => {
+const UpdateTask: NextPage = () => {
   const router = useRouter();
   const id =
     typeof router.query.id === 'string' ? parseInt(router.query.id) : NaN;
@@ -20,17 +21,17 @@ const UpdateTask: React.FC = () => {
   const { data, loading, error } = useTaskQuery({ variables: { id } });
 
   if (!id) {
-    return <Error statusCode={404} />;
+    return <Custom404 />;
   }
 
   const task = data?.task;
 
   return loading ? (
-    <p>Loading...</p>
+    <p className="loading">Loading...</p>
   ) : error ? (
-    <p>Error!</p>
+    <p className="alert-error">ERROR: {error.message}</p>
   ) : task ? (
-    <UpdateTaskForm currentValues={{ title: task.title }} />
+    <UpdateTaskForm id={task.id} currentValues={{ title: task.title }} />
   ) : (
     <p>Task not found...</p>
   );
